@@ -11,7 +11,7 @@ bin:; mkdir -p bin/
 bin/test_hashmap: src/unja_hashmap.c tests/test_hashmap.c | bin
 	$(CC) $(TESTFLAGS) $^ -o $@
 
-bin/test_template: src/template.c src/unja_hashmap.c src/unja_vector.c tests/test_template.c vendor/mpc.c | bin 
+bin/test_template: src/unja_template.c src/unja_hashmap.c src/unja_vector.c tests/test_template.c vendor/mpc.c | bin 
 	$(CC) $(TESTFLAGS) $^ -o $@
 
 .PHONY: check
