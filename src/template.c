@@ -33,13 +33,13 @@ struct buffer {
 };
 
 struct env {
-    struct hashmap *templates;
+    struct unja_hashmap *templates;
 };
 
 struct template {
     char *name;
     mpc_ast_t *ast;
-    struct hashmap *blocks;
+    struct unja_hashmap *blocks;
     char *parent;
 };
 
@@ -158,10 +158,10 @@ mpc_ast_t *parse(char *tmpl) {
     return r.output;
 }
 
-struct hashmap *find_blocks_in_ast(mpc_ast_t *node, struct hashmap *map) {
+struct unja_hashmap *find_blocks_in_ast(mpc_ast_t *node, struct unja_hashmap *map) {
     if (strstr(node->tag, "content|statement|block")) {
         char *name = node->children[2]->contents;
-        hashmap_insert(map, name, node);
+        unja_hashmap_insert(map, name, node);
     }
 
     for (int i=0; i < node->children_num; i++) {
@@ -182,7 +182,7 @@ struct env *env_new(char *dirname) {
     } 
   
     struct env *env = malloc(sizeof *env);
-    env->templates = hashmap_new();
+    env->templates = unja_hashmap_new();
     chdir(dirname);
 
     struct dirent *de;   
@@ -206,14 +206,14 @@ struct env *env_new(char *dirname) {
         struct template *t = malloc(sizeof *t);
         t->ast = ast;
         t->name = name;
-        t->blocks = find_blocks_in_ast(ast, hashmap_new());
+        t->blocks = find_blocks_in_ast(ast, unja_hashmap_new());
         t->parent = NULL;
 
         if (ast->children_num > 1 && ast->children[1]->children_num > 0 && strstr(ast->children[1]->children[0]->tag, "content|statement|extends")) {
             t->parent = ast->children[1]->children[0]->children[2]->children[1]->contents;
         }
 
-        hashmap_insert(env->templates, name, t);
+        unja_hashmap_insert(env->templates, name, t);
     }
   
     closedir(dr); 
@@ -223,15 +223,15 @@ struct env *env_new(char *dirname) {
 
 void template_free(void *v) {
     struct template *t = (struct template *)v;
-    hashmap_free(t->blocks);
+    unja_hashmap_free(t->blocks);
     mpc_ast_delete(t->ast);
     free(t->name);
     free(t);
 }
 
 void env_free(struct env *env) {
-    hashmap_walk(env->templates, template_free);
-    hashmap_free(env->templates);
+    unja_hashmap_walk(env->templates, template_free);
+    unja_hashmap_free(env->templates);
     free(env);
 }
 
@@ -349,8 +349,8 @@ int object_is_truthy(struct unja_object *obj) {
 }
 
 struct context {
-    struct hashmap *vars;
-    struct hashmap *filters;
+    struct unja_hashmap *vars;
+    struct unja_hashmap *filters;
     struct env *env;
     struct template *current_template;
 };
@@ -363,7 +363,7 @@ struct unja_object *eval_expression_value(mpc_ast_t* node, struct context *ctx) 
         }
 
         char *key = node->contents;
-        char *value = hashmap_resolve(ctx->vars, key);
+        char *value = unja_hashmap_resolve(ctx->vars, key);
 
         /* TODO: Handle unexisting symbols (returns NULL currently) */
         if (value == NULL) {
@@ -473,7 +473,7 @@ struct unja_object *eval_expression(mpc_ast_t* expr, struct context *ctx) {
         /* Check if we arrived at a filter (guaranteed to be last in expression list) */
         if (strstr(expr->children[offset+1]->tag, "filter")) {
             char *filter_name = expr->children[offset+1]->children[3]->contents;
-            struct unja_object *(*filter_fn)(struct unja_object *) = hashmap_get(ctx->filters, filter_name);
+            struct unja_object *(*filter_fn)(struct unja_object *) = unja_hashmap_get(ctx->filters, filter_name);
             if (NULL == filter_fn) {
                 errx(EXIT_FAILURE, "unknown filter: %s", filter_name);
             }
@@ -521,10 +521,10 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
         
         // find block in "lowest" template
         struct template *templ = ctx->current_template;
-        mpc_ast_t *block = hashmap_get(templ->blocks, block_name);
+        mpc_ast_t *block = unja_hashmap_get(templ->blocks, block_name);
         while (templ != NULL && block == NULL) {
-            templ = hashmap_get(ctx->env->templates, templ->parent);
-            block = hashmap_get(templ->blocks, block_name);
+            templ = unja_hashmap_get(ctx->env->templates, templ->parent);
+            block = unja_hashmap_get(templ->blocks, block_name);
         }
         
         if (block) {
@@ -551,15 +551,15 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
     if (strstr(t->tag, "content|statement|for")) {
         char *tmp_key = t->children[2]->contents;
         char *iterator_key = t->children[4]->contents;
-        struct unja_vector *list = hashmap_resolve(ctx->vars, iterator_key);
+        struct unja_vector *list = unja_hashmap_resolve(ctx->vars, iterator_key);
 
         /* add "loop" variable to context */
-        struct hashmap *loop = hashmap_new();
+        struct unja_hashmap *loop = unja_hashmap_new();
         char index[8], first[2], last[2];
-        hashmap_insert(loop, "index", index);
-        hashmap_insert(loop, "first", first);
-        hashmap_insert(loop, "last", last);
-        hashmap_insert(ctx->vars, "loop", loop);
+        unja_hashmap_insert(loop, "index", index);
+        unja_hashmap_insert(loop, "first", first);
+        unja_hashmap_insert(loop, "last", last);
+        unja_hashmap_insert(ctx->vars, "loop", loop);
 
         /* loop over values in unja_vector */
         for (int i=0; i < list->size; i++) {
@@ -567,7 +567,7 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
             sprintf(index, "%d", i);
             sprintf(first, "%d", i == 0);
             sprintf(last, "%d", i == (list->size - 1));
-            hashmap_insert(ctx->vars, tmp_key, list->values[i]);
+            unja_hashmap_insert(ctx->vars, tmp_key, list->values[i]);
             trim_whitespace = strstr(t->children[5]->contents, "-") ? 1 : 0;
 
             /* evaluate body */
@@ -575,8 +575,8 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
         }
 
         /* remove "loop" variable from context */
-        hashmap_remove(ctx->vars, "loop");
-        hashmap_free(loop);
+        unja_hashmap_remove(ctx->vars, "loop");
+        unja_hashmap_free(loop);
 
         /* trim trailing whitespace if closing tag has minus sign */
         if (strstr(t->children[7]->contents, "-")) {
@@ -681,16 +681,16 @@ struct unja_object *filter_length(struct unja_object *obj) {
     return make_int_object(len);
 }
 
-struct hashmap *default_filters() {
-    struct hashmap *filters = hashmap_new();
-    hashmap_insert(filters, "trim", filter_trim);
-    hashmap_insert(filters, "lower", filter_lower);
-    hashmap_insert(filters, "wordcount", filter_wordcount);
-    hashmap_insert(filters, "length", filter_length);
+struct unja_hashmap *default_filters() {
+    struct unja_hashmap *filters = unja_hashmap_new();
+    unja_hashmap_insert(filters, "trim", filter_trim);
+    unja_hashmap_insert(filters, "lower", filter_lower);
+    unja_hashmap_insert(filters, "wordcount", filter_wordcount);
+    unja_hashmap_insert(filters, "length", filter_length);
     return filters;
 }
 
-struct context context_new(struct hashmap *vars, struct env *env, struct template *current_tmpl) {
+struct context context_new(struct unja_hashmap *vars, struct env *env, struct template *current_tmpl) {
     struct context ctx;
     ctx.filters = default_filters();
     ctx.vars = vars;
@@ -700,10 +700,10 @@ struct context context_new(struct hashmap *vars, struct env *env, struct templat
 }
 
 void context_free(struct context ctx) {
-    hashmap_free(ctx.filters);
+    unja_hashmap_free(ctx.filters);
 }
 
-char *template_string(char *tmpl, struct hashmap *vars) {
+char *template_string(char *tmpl, struct unja_hashmap *vars) {
     #if DEBUG
     printf("Template: %s\n", tmpl);
     #endif
@@ -715,8 +715,8 @@ char *template_string(char *tmpl, struct hashmap *vars) {
     return output;
 }
 
-char *template(struct env *env, char *template_name, struct hashmap *vars) {
-    struct template *t = hashmap_get(env->templates, template_name);
+char *template(struct env *env, char *template_name, struct unja_hashmap *vars) {
+    struct template *t = unja_hashmap_get(env->templates, template_name);
     #if DEBUG
     printf("Template name: %s\n", t->name);
     printf("Parent: %s\n", t->parent ? t->parent : "None");
@@ -727,7 +727,7 @@ char *template(struct env *env, char *template_name, struct hashmap *vars) {
     // find root template
     while (t->parent != NULL) {
         char *parent_name = t->parent;
-        t = hashmap_get(env->templates, parent_name);
+        t = unja_hashmap_get(env->templates, parent_name);
 
         if (t == NULL) {
             errx(EXIT_FAILURE, "template tried to extend unexisting parent \"%s\"", parent_name);

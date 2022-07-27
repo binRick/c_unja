@@ -40,21 +40,21 @@ TEST(expr_string_no_spaces) {
 
 TEST(expr_symbol) {
     char *input = "Hello {{ name }}.";
-    struct hashmap *ctx = hashmap_new();
-    hashmap_insert(ctx, "name", "world");
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    unja_hashmap_insert(ctx, "name", "world");
     char *output = template_string(input, ctx);
     assert_str(output, "Hello world.");
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
 TEST(expr_symbol_no_spaces) {
     char *input = "Hello {{name}}.";
-    struct hashmap *ctx = hashmap_new();
-    hashmap_insert(ctx, "name", "world");
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    unja_hashmap_insert(ctx, "name", "world");
     char *output = template_string(input, ctx);
     assert_str(output, "Hello world.");
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
@@ -76,9 +76,9 @@ TEST(expr_add) {
         {"{{ 5 + 5 }}", "10"},
     };
 
-    struct hashmap *ctx = hashmap_new();
-    hashmap_insert(ctx, "foo", "10");
-    hashmap_insert(ctx, "name", "Danny");
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    unja_hashmap_insert(ctx, "foo", "10");
+    unja_hashmap_insert(ctx, "name", "Danny");
 
     for (int i=0; i < ARRAY_SIZE(tests); i++) {
         char *output = template_string(tests[i].input, ctx);
@@ -86,7 +86,7 @@ TEST(expr_add) {
         free(output);
     }
 
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
 }
 
 TEST(expr_op_precedence) {
@@ -100,13 +100,13 @@ TEST(expr_op_precedence) {
         {"{{ 1 + 10 / 2 }}.", "6."},
     };
 
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
     for (int i=0; i < ARRAY_SIZE(tests); i++) {
         char *output = template_string(tests[i].input, ctx);
         assert_str(output, tests[i].expected_output);
         free(output);
     }
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
 }
 
 TEST(expr_subtract) {
@@ -153,18 +153,18 @@ TEST(expr_op_whitespace) {
 
 TEST(for_block) {
     char *input = "{% for n in names %}{{ n }}, {% endfor %}";
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
 
     struct unja_vector *names = unja_vector_new(9);
     unja_vector_push(names, "John");
     unja_vector_push(names, "Sally");
     unja_vector_push(names, "Eric");
-    hashmap_insert(ctx, "names", names);
+    unja_hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "John, Sally, Eric, ");
     unja_vector_free(names);
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
@@ -175,47 +175,47 @@ TEST(for_block_vars) {
                   "{% if loop.first %} <--{% endif %}"
                   "{% if not loop.last %}\n{% endif %}"
                   "{% endfor %}";
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
 
     struct unja_vector *names = unja_vector_new(9);
     unja_vector_push(names, "John");
     unja_vector_push(names, "Sally");
     unja_vector_push(names, "Eric");
-    hashmap_insert(ctx, "names", names);
+    unja_hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "1: John <--\n2: Sally\n3: Eric");
     unja_vector_free(names);
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
 TEST(for_block_whitespace) {
     char *input = "\n{%- for n in names -%}\n{{ n }}\n{%- endfor -%}\n";
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
 
     struct unja_vector *names = unja_vector_new(2);
     unja_vector_push(names, "John");
     unja_vector_push(names, "Sally");
-    hashmap_insert(ctx, "names", names);
+    unja_hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "John\nSally");
     unja_vector_free(names);
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
 TEST(var_dot_notation) {
     char *input = "Hello {{user.name}}!";
-    struct hashmap *ctx = hashmap_new();
-    struct hashmap *user = hashmap_new();
-    hashmap_insert(user, "name", "Danny");
-    hashmap_insert(ctx, "user", user);
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    struct unja_hashmap *user = unja_hashmap_new();
+    unja_hashmap_insert(user, "name", "Danny");
+    unja_hashmap_insert(ctx, "user", user);
     char *output = template_string(input, ctx);
     assert_str(output, "Hello Danny!");
-    hashmap_free(user);
-    hashmap_free(ctx);
+    unja_hashmap_free(user);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
@@ -240,16 +240,16 @@ TEST(if_block) {
         {"{% if 6 > 10 - 5 %}1{% endif %}", "1"},
     };
 
-    struct hashmap *ctx = hashmap_new();
-    hashmap_insert(ctx, "name", "Danny");
-    hashmap_insert(ctx, "age", "29");
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    unja_hashmap_insert(ctx, "name", "Danny");
+    unja_hashmap_insert(ctx, "age", "29");
     for (int i=0; i < ARRAY_SIZE(tests); i++) {
         char *output = template_string(tests[i].input, ctx);
         assert_str(output, tests[i].expected_output);
         free(output);
     }
 
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
 }
 
 TEST(expr_gt) {
@@ -405,16 +405,16 @@ TEST(if_else_block) {
         {"{% if age + 5 > 29 %}1{% else %}2{% endif %}", "1"},
     };
 
-    struct hashmap *ctx = hashmap_new();
-    hashmap_insert(ctx, "name", "Danny");
-    hashmap_insert(ctx, "age", "29");
+    struct unja_hashmap *ctx = unja_hashmap_new();
+    unja_hashmap_insert(ctx, "name", "Danny");
+    unja_hashmap_insert(ctx, "age", "29");
     for (int i=0; i < ARRAY_SIZE(tests); i++) {
         char *output = template_string(tests[i].input, ctx);
         assert_str(output, tests[i].expected_output);
         free(output);
     }
 
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
 }
 
 TEST(if_else_block_whitespace) {
@@ -428,13 +428,13 @@ TEST(buffer_alloc) {
     /* Output a string so that output buffer is longer than template buffer, 
         to test dynamic allocation */
     char *input = "{{ n }}";
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
     char *text = "Lorem ipsum dolor sit amet.";
-    hashmap_insert(ctx, "n", text);
+    unja_hashmap_insert(ctx, "n", text);
 
     char *output = template_string(input, ctx);
     assert_str(output, text);
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
@@ -456,12 +456,12 @@ TEST(inheritance_depth_2) {
 
 TEST(filter_trim) {
     char *input = "{{ text | trim }}";
-    struct hashmap *ctx = hashmap_new();
+    struct unja_hashmap *ctx = unja_hashmap_new();
     char *text = "\nHello world\n";
-    hashmap_insert(ctx, "text", text);
+    unja_hashmap_insert(ctx, "text", text);
     char *output = template_string(input, ctx);
     assert_str(output, "Hello world");
-    hashmap_free(ctx);
+    unja_hashmap_free(ctx);
     free(output);
 }
 
