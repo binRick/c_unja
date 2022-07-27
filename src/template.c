@@ -551,7 +551,7 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
     if (strstr(t->tag, "content|statement|for")) {
         char *tmp_key = t->children[2]->contents;
         char *iterator_key = t->children[4]->contents;
-        struct vector *list = hashmap_resolve(ctx->vars, iterator_key);
+        struct unja_vector *list = hashmap_resolve(ctx->vars, iterator_key);
 
         /* add "loop" variable to context */
         struct hashmap *loop = hashmap_new();
@@ -561,7 +561,7 @@ int eval(struct buffer *buf, mpc_ast_t* t, struct context *ctx) {
         hashmap_insert(loop, "last", last);
         hashmap_insert(ctx->vars, "loop", loop);
 
-        /* loop over values in vector */
+        /* loop over values in unja_vector */
         for (int i=0; i < list->size; i++) {
             /* set loop variable values */
             sprintf(index, "%d", i);

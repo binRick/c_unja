@@ -155,15 +155,15 @@ TEST(for_block) {
     char *input = "{% for n in names %}{{ n }}, {% endfor %}";
     struct hashmap *ctx = hashmap_new();
 
-    struct vector *names = vector_new(9);
-    vector_push(names, "John");
-    vector_push(names, "Sally");
-    vector_push(names, "Eric");
+    struct unja_vector *names = unja_vector_new(9);
+    unja_vector_push(names, "John");
+    unja_vector_push(names, "Sally");
+    unja_vector_push(names, "Eric");
     hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "John, Sally, Eric, ");
-    vector_free(names);
+    unja_vector_free(names);
     hashmap_free(ctx);
     free(output);
 }
@@ -177,15 +177,15 @@ TEST(for_block_vars) {
                   "{% endfor %}";
     struct hashmap *ctx = hashmap_new();
 
-    struct vector *names = vector_new(9);
-    vector_push(names, "John");
-    vector_push(names, "Sally");
-    vector_push(names, "Eric");
+    struct unja_vector *names = unja_vector_new(9);
+    unja_vector_push(names, "John");
+    unja_vector_push(names, "Sally");
+    unja_vector_push(names, "Eric");
     hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "1: John <--\n2: Sally\n3: Eric");
-    vector_free(names);
+    unja_vector_free(names);
     hashmap_free(ctx);
     free(output);
 }
@@ -194,14 +194,14 @@ TEST(for_block_whitespace) {
     char *input = "\n{%- for n in names -%}\n{{ n }}\n{%- endfor -%}\n";
     struct hashmap *ctx = hashmap_new();
 
-    struct vector *names = vector_new(2);
-    vector_push(names, "John");
-    vector_push(names, "Sally");
+    struct unja_vector *names = unja_vector_new(2);
+    unja_vector_push(names, "John");
+    unja_vector_push(names, "Sally");
     hashmap_insert(ctx, "names", names);
 
     char *output = template_string(input, ctx);
     assert_str(output, "John\nSally");
-    vector_free(names);
+    unja_vector_free(names);
     hashmap_free(ctx);
     free(output);
 }
