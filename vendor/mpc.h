@@ -1,3 +1,4 @@
+#pragma once
 /*
 ** mpc - Micro Parser Combinator library for C
 **

@@ -1,3 +1,4 @@
+#pragma once
 #include "unja_hashmap.h"
 #include "unja_vector.h"
 

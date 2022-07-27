@@ -1,3 +1,4 @@
+#pragma once
 #define HASHMAP_CAP 26
 
 struct unja_hashmap {
