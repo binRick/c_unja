@@ -7,7 +7,7 @@
 #include <assert.h>
 
 #include "vendor/mpc.h"
-#include "template.h"
+#include "unja_template.h"
 
 enum unja_object_type {
     OBJ_NULL,
@@ -703,7 +703,7 @@ void context_free(struct context ctx) {
     unja_hashmap_free(ctx.filters);
 }
 
-char *template_string(char *tmpl, struct unja_hashmap *vars) {
+char *unja_template_string(char *tmpl, struct unja_hashmap *vars) {
     #if DEBUG
     printf("Template: %s\n", tmpl);
     #endif
@@ -715,7 +715,7 @@ char *template_string(char *tmpl, struct unja_hashmap *vars) {
     return output;
 }
 
-char *template(struct env *env, char *template_name, struct unja_hashmap *vars) {
+char *unja_template(struct env *env, char *template_name, struct unja_hashmap *vars) {
     struct template *t = unja_hashmap_get(env->templates, template_name);
     #if DEBUG
     printf("Template name: %s\n", t->name);
